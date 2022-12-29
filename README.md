@@ -2,7 +2,11 @@
 This application inserts a watermark in the lower right corner into all images of an specified images folder.
 
 # Examples
-Check out examples/original_images and examples/watermarked_images to get an idea what the application is doing.
+Check out examples/watermarked_images to get an idea what the application is doing.
+
+| Original image | Watermarked image
+|:--:|:--:
+| ![original](https://raw.githubusercontent.com/danielchristianschroeter/watermark-to-image/main/examples/original_images/landscape.jpg) | ![watermarked](https://raw.githubusercontent.com/danielchristianschroeter/watermark-to-image/main/examples/watermarked_images/landscape.jpg) |
 
 ## Usage
 1. Build or download prebuild executeable
