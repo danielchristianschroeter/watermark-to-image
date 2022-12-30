@@ -184,6 +184,11 @@ func main() {
 
 	// Loop through the images in the source directory
 	for _, file := range files {
+		// Skip files that start with a dot (e.g. .DS_Store file)
+		if strings.HasPrefix(file.Name(), ".") {
+			continue
+		}
+
 		// Open the image
 		f, err := os.Open(sourceDirectory + file.Name())
 		if err != nil {
