@@ -10,7 +10,7 @@ Check out examples/original_images and examples/watermarked_images directory to 
 | ![portrait_original](https://raw.githubusercontent.com/danielchristianschroeter/watermark-to-image/main/examples/original_images/portrait.jpg) | ![portrait_watermarked](https://raw.githubusercontent.com/danielchristianschroeter/watermark-to-image/main/examples/watermarked_images/portrait.jpg) |
 
 ## Usage
-1. Build or download prebuild executeable
+1. Build or download prebuild executable
 2. Execute following command:
 ```
 ./watermark-to-image -sourceDirectory ./examples/original_images -targetDirectory ./examples/watermarked_images -watermarkImageFile ./examples/watermark.png
