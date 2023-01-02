@@ -12,8 +12,9 @@ import (
 	"strings"
 
 	"github.com/disintegration/imaging"
+	exif "github.com/dsoprea/go-exif/v3"
+	exifcommon "github.com/dsoprea/go-exif/v3/common"
 	"github.com/gabriel-vasile/mimetype"
-	"github.com/rwcarlsen/goexif/exif"
 	"golang.org/x/image/draw"
 )
 
@@ -43,7 +44,7 @@ func init() {
 }
 
 func processImage(file *os.File, targetDirectory string, watermarkImageFile string, watermarkIncreasement float64, watermarkMarginRight int, watermarkMarginBottom int, watermarkOpacity float64) error {
-
+	var orientationInt uint16
 	// Load the watermark png image file using image.Decode
 	watermarkFile, err := os.Open(watermarkImageFile)
 	if err != nil {
@@ -55,22 +56,34 @@ func processImage(file *os.File, targetDirectory string, watermarkImageFile stri
 		log.Fatalf("Failed to image.Decode of file %+v Error: %+v", watermarkImageFile, err)
 	}
 
-	// Read EXIF-Metadata of image
-	exifData, err := exif.Decode(file)
-	if err != nil {
-		log.Fatalf("Failed to exif.Decode of file %+v Error: %+v", file.Name(), err)
-	}
+	// Read exif metadata of image
+	exifData, _ := exif.SearchAndExtractExifWithReader(file)
 
-	// Read Orientation-Tag from EXIF-Metadata
-	orientation, err := exifData.Get(exif.Orientation)
-	if err != nil {
-		log.Fatalf("Failed to exifData.Get of file %+v Error: %+v", file.Name(), err)
-	}
+	// Check if exif metadata available in image
+	if len(exifData) > 0 {
+		im, err := exifcommon.NewIfdMappingWithStandard()
+		if err != nil {
+			log.Fatalf("Failed to exifcommon.NewIfdMappingWithStandard in file %+v Error: %+v", file.Name(), err)
+		}
+		ti := exif.NewTagIndex()
 
-	// Convert Orientation-Tag to integer value
-	orientationInt, err := orientation.Int(0)
-	if err != nil {
-		log.Fatalf("Failed to convert orientation-tag of file %+v Error: %+v", file.Name(), err)
+		// Read Orientation-Tag from exif metadata
+		_, index, err := exif.Collect(im, ti, exifData)
+		if err != nil {
+			log.Fatalf("Failed to exif.Collect in file %+v Error: %+v", file.Name(), err)
+		}
+		results, err := index.RootIfd.FindTagWithName("Orientation")
+		if err != nil {
+			log.Fatalf("Failed to index.RootIfd.FindTagWithName in file %+v Error: %+v", file.Name(), err)
+		}
+		orientation, err := results[0].Value()
+		if err != nil {
+			log.Fatalf("Failed to extract value of results from exif data in file %+v Error: %+v", file.Name(), err)
+		}
+		orientationSlice := orientation.([]uint16)
+		orientationInt = orientationSlice[0]
+	} else {
+		log.Printf("Notice: No exif data found for file %+v", file.Name())
 	}
 
 	// Seek to the beginning of the file before calling image.Decode
@@ -84,8 +97,11 @@ func processImage(file *os.File, targetDirectory string, watermarkImageFile stri
 	if err != nil {
 		log.Fatalf("Failed to image.Decode of file %+v Error: %+v", file.Name(), err)
 	}
+
 	// Rotate and/or flip image based on Orientation-Tag from EXIF-Metadata
 	switch orientationInt {
+	case 0:
+		// no adjustment needed
 	case 1:
 		// no adjustment needed
 	case 2:
@@ -102,11 +118,9 @@ func processImage(file *os.File, targetDirectory string, watermarkImageFile stri
 		img = imaging.FlipV(imaging.Rotate(img, 270, color.Transparent))
 	case 8:
 		img = imaging.Rotate(img, 90, color.Transparent)
+	default:
+		// no adjustment needed
 	}
-
-	// Set the the margins (pixels).
-	//marginSide := 15
-	//marginBottom := 15
 
 	// Get the width and the height of our image.
 	photoWidth := img.Bounds().Dx()
@@ -117,7 +131,6 @@ func processImage(file *os.File, targetDirectory string, watermarkImageFile stri
 	watermarkHeight := watermark.Bounds().Dy()
 
 	// Increase the dimensions of the watermark by a given percentage.
-	//percentage := 250 // increase dimensions
 	resizedWidth := int(float64(watermarkWidth) * (float64(watermarkIncreasement) / 100.0))
 	resizedHeight := int(float64(watermarkHeight) * (float64(watermarkIncreasement) / 100.0))
 	resizedWatermark := image.NewRGBA(image.Rect(0, 0, resizedWidth, resizedHeight))
@@ -135,7 +148,6 @@ func processImage(file *os.File, targetDirectory string, watermarkImageFile stri
 	// Save the new image
 	outFile, err := os.Create(targetDirectory + filepath.Base(file.Name()))
 	if err != nil {
-		// handle error
 		log.Fatalf("Failed to os.Create of file %+v Error: %+v", targetDirectory+filepath.Base(file.Name()), err)
 	}
 	defer outFile.Close()
@@ -204,7 +216,7 @@ func main() {
 		}
 		switch mimeType.String() {
 		case "image/heic":
-			log.Printf("Skipping %v Reason: heic not supported", sourceDirectory+file.Name())
+			log.Printf("Skipping %v Reason: heic images are not supported yet", sourceDirectory+file.Name())
 			continue
 		}
 
