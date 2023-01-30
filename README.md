@@ -23,14 +23,14 @@ Check out examples/original_images and examples/watermarked_images directory to 
         Source directory of original images
   -targetDirectory string
         Target directory for watermarked images
-  -targetWaterkaredImageFilename string
-        Rename all target files to the specified filename, if set targetWaterkaredImageExtension is required
-  -targetWaterkaredImageFilenameSuffix string
-        Dynamic Suffix for the filename definied in targetWaterkaredImageFilename added to every target file. Allowed values are 3DIGITSCOUNT (3 digits enumeration count) or RAND (random 6 digits number) (default "3DIGITSCOUNT")
-  -targetWaterkaredImageHight int
-        Resize target watermarked image hight, if targetWaterkaredImageWidth is empty aspect ratio will be presvered
-  -targetWaterkaredImageWidth int
-        Resize target watermarked image width, if targetWaterkaredImageHight is empty aspect ratio will be presvered
+  -targetWatermarkedImageFilename string
+        Rename all target files to the specified filename, if set targetWatermarkedImageExtension is required
+  -targetWatermarkedImageFilenameSuffix string
+        Dynamic Suffix for the filename definied in targetWatermarkedImageFilename added to every target file. Allowed values are 3DIGITSCOUNT (3 digits enumeration count) or RAND (random 6 digits number) (default "3DIGITSCOUNT")
+  -targetWatermarkedImageHight int
+        Resize target watermarked image hight, if targetWatermarkedImageWidth is empty aspect ratio will be preserved
+  -targetWatermarkedImageWidth int
+        Resize target watermarked image width, if targetWatermarkedImageHight is empty aspect ratio will be preserved
   -watermarkImageFile string
         Path and name of the watermark png image file
   -watermarkIncreasement float
