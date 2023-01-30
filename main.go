@@ -26,13 +26,13 @@ var version = "development"
 
 // Global variables used for command line flags
 var (
-	sourceDirectory                     string
-	targetDirectory                     string
-	watermarkImageFile                  string
-	watermarkIncreasement               float64
-	watermarkOpacity                    float64
-	watermarkMarginRight                int
-	watermarkMarginBottom               int
+	sourceDirectory                      string
+	targetDirectory                      string
+	watermarkImageFile                   string
+	watermarkIncreasement                float64
+	watermarkOpacity                     float64
+	watermarkMarginRight                 int
+	watermarkMarginBottom                int
 	targetWatermarkedImageWidth          int
 	targetWatermarkedImageHight          int
 	targetWatermarkedImageFilename       string
@@ -48,7 +48,7 @@ func init() {
 	flag.Float64Var(&watermarkOpacity, "watermarkOpacity", 0.5, "Opacity/Transparency of the watermark image file")
 	flag.IntVar(&watermarkMarginRight, "watermarkMarginRight", 20, "Margin to the right edge for the watermark")
 	flag.IntVar(&watermarkMarginBottom, "watermarkMarginBottom", 20, "Margin to the bottom edge for the watermark")
-	flag.IntVar(&targetWatermarkedImageWidth, "targetWatermarkedImageWidth", 0, "Resize target watermarked image width, if targetWatermarkedImageHight is empty aspect ratio will be preserved“)
+	flag.IntVar(&targetWatermarkedImageWidth, "targetWatermarkedImageWidth", 0, "Resize target watermarked image width, if targetWatermarkedImageHight is empty aspect ratio will be preserved")
 	flag.IntVar(&targetWatermarkedImageHight, "targetWatermarkedImageHight", 0, "Resize target watermarked image hight, if targetWatermarkedImageWidth is empty aspect ratio will be preserved")
 	flag.StringVar(&targetWatermarkedImageFilename, "targetWatermarkedImageFilename", "", "Rename all target files to the specified filename, if set targetWatermarkedImageExtension is required")
 	flag.StringVar(&targetWatermarkedImageFilenameSuffix, "targetWatermarkedImageFilenameSuffix", "3DIGITSCOUNT", "Dynamic Suffix for the filename defined in targetWatermarkedImageFilename added to every target file. Allowed values are 3DIGITSCOUNT (3 digits enumeration count) or RAND (random 6 digits number)")
