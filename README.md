@@ -1,5 +1,5 @@
 # watermark-to-image
-This application inserts a watermark in the lower right corner into all images of an specified images folder.
+This application inserts a watermark in the lower right corner into all images of a specified images folder.
 
 # Examples
 Check out examples/original_images and examples/watermarked_images directory to get an idea what the application is doing.
@@ -24,7 +24,7 @@ Check out examples/original_images and examples/watermarked_images directory to 
   -targetDirectory string
         Target directory for watermarked images
   -targetWaterkaredImageFilename string
-        Rename all target files to the spercified filename, if set targetWaterkaredImageExtension is required
+        Rename all target files to the specified filename, if set targetWaterkaredImageExtension is required
   -targetWaterkaredImageFilenameSuffix string
         Dynamic Suffix for the filename definied in targetWaterkaredImageFilename added to every target file. Allowed values are 3DIGITSCOUNT (3 digits enumeration count) or RAND (random 6 digits number) (default "3DIGITSCOUNT")
   -targetWaterkaredImageHight int
