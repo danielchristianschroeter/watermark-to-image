@@ -33,10 +33,10 @@ var (
 	watermarkOpacity                    float64
 	watermarkMarginRight                int
 	watermarkMarginBottom               int
-	targetWaterkaredImageWidth          int
-	targetWaterkaredImageHight          int
-	targetWaterkaredImageFilename       string
-	targetWaterkaredImageFilenameSuffix string
+	targetWatermarkedImageWidth          int
+	targetWatermarkedImageHight          int
+	targetWatermarkedImageFilename       string
+	targetWatermarkedImageFilenameSuffix string
 )
 
 func init() {
@@ -48,13 +48,13 @@ func init() {
 	flag.Float64Var(&watermarkOpacity, "watermarkOpacity", 0.5, "Opacity/Transparency of the watermark image file")
 	flag.IntVar(&watermarkMarginRight, "watermarkMarginRight", 20, "Margin to the right edge for the watermark")
 	flag.IntVar(&watermarkMarginBottom, "watermarkMarginBottom", 20, "Margin to the bottom edge for the watermark")
-	flag.IntVar(&targetWaterkaredImageWidth, "targetWaterkaredImageWidth", 0, "Resize target watermarked image width, if targetWaterkaredImageHight is empty aspect ratio will be presvered")
-	flag.IntVar(&targetWaterkaredImageHight, "targetWaterkaredImageHight", 0, "Resize target watermarked image hight, if targetWaterkaredImageWidth is empty aspect ratio will be presvered")
-	flag.StringVar(&targetWaterkaredImageFilename, "targetWaterkaredImageFilename", "", "Rename all target files to the specified filename, if set targetWaterkaredImageExtension is required")
-	flag.StringVar(&targetWaterkaredImageFilenameSuffix, "targetWaterkaredImageFilenameSuffix", "3DIGITSCOUNT", "Dynamic Suffix for the filename definied in targetWaterkaredImageFilename added to every target file. Allowed values are 3DIGITSCOUNT (3 digits enumeration count) or RAND (random 6 digits number)")
+	flag.IntVar(&targetWatermarkedImageWidth, "targetWatermarkedImageWidth", 0, "Resize target watermarked image width, if targetWatermarkedImageHight is empty aspect ratio will be preserved“)
+	flag.IntVar(&targetWatermarkedImageHight, "targetWatermarkedImageHight", 0, "Resize target watermarked image hight, if targetWatermarkedImageWidth is empty aspect ratio will be preserved")
+	flag.StringVar(&targetWatermarkedImageFilename, "targetWatermarkedImageFilename", "", "Rename all target files to the specified filename, if set targetWatermarkedImageExtension is required")
+	flag.StringVar(&targetWatermarkedImageFilenameSuffix, "targetWatermarkedImageFilenameSuffix", "3DIGITSCOUNT", "Dynamic Suffix for the filename defined in targetWatermarkedImageFilename added to every target file. Allowed values are 3DIGITSCOUNT (3 digits enumeration count) or RAND (random 6 digits number)")
 }
 
-func processImage(count int, file *os.File, targetDirectory string, watermarkImageFile string, watermarkIncreasement float64, watermarkMarginRight int, watermarkMarginBottom int, watermarkOpacity float64, targetWaterkaredImageWidth int, targetWaterkaredImageHight int, targetWaterkaredImageFilename string, targetWaterkaredImageFilenameSuffix string) error {
+func processImage(count int, file *os.File, targetDirectory string, watermarkImageFile string, watermarkIncreasement float64, watermarkMarginRight int, watermarkMarginBottom int, watermarkOpacity float64, targetWatermarkedImageWidth int, targetWatermarkedImageHight int, targetWatermarkedImageFilename string, targetWatermarkedImageFilenameSuffix string) error {
 	var orientationInt uint16
 	// Load the watermark png image file using image.Decode
 	watermarkFile, err := os.Open(watermarkImageFile)
@@ -157,27 +157,27 @@ func processImage(count int, file *os.File, targetDirectory string, watermarkIma
 	dst := imaging.Overlay(img, resizedWatermark, image.Pt(dstX, dstY), watermarkOpacity)
 
 	// Resize the image
-	if targetWaterkaredImageWidth != 0 || targetWaterkaredImageHight != 0 {
-		dst = imaging.Resize(img, targetWaterkaredImageWidth, targetWaterkaredImageHight, imaging.Lanczos)
+	if targetWatermarkedImageWidth != 0 || targetWatermarkedImageHight != 0 {
+		dst = imaging.Resize(img, targetWatermarkedImageWidth, targetWatermarkedImageHight, imaging.Lanczos)
 	}
 
-	if targetWaterkaredImageFilename != "" && targetWaterkaredImageFilenameSuffix != "" {
+	if targetWatermarkedImageFilename != "" && targetWatermarkedImageFilenameSuffix != "" {
 		// Save the new image with a custom filename and a dynamic suffix
 		var Suffix string
-		switch targetWaterkaredImageFilenameSuffix {
+		switch targetWatermarkedImageFilenameSuffix {
 		case "3DIGITSCOUNT":
 			Suffix = fmt.Sprintf("%03d", count)
 		case "RAND":
 			Suffix = strconv.Itoa(rand.Intn(999999))
 		}
-		outFile, err := os.Create(targetDirectory + targetWaterkaredImageFilename + Suffix + filepath.Ext(file.Name()))
+		outFile, err := os.Create(targetDirectory + targetWatermarkedImageFilename + Suffix + filepath.Ext(file.Name()))
 		if err != nil {
-			log.Fatalf("Failed to os.Create of file %+v Error: %+v", targetDirectory+targetWaterkaredImageFilename+Suffix+filepath.Ext(file.Name()), err)
+			log.Fatalf("Failed to os.Create of file %+v Error: %+v", targetDirectory+targetWatermarkedImageFilename+Suffix+filepath.Ext(file.Name()), err)
 		}
 		defer outFile.Close()
 		jpeg.Encode(outFile, dst, nil)
 
-		log.Println("Saved watermarked image to " + targetDirectory + targetWaterkaredImageFilename + Suffix + filepath.Ext(file.Name()))
+		log.Println("Saved watermarked image to " + targetDirectory + targetWatermarkedImageFilename + Suffix + filepath.Ext(file.Name()))
 	} else {
 		// Save the new image with the same filename
 		outFile, err := os.Create(targetDirectory + filepath.Base(file.Name()))
@@ -215,7 +215,7 @@ func main() {
 		targetDirectory += "/"
 	}
 
-	log.Println("Processing imges from directory " + sourceDirectory + "...")
+	log.Println("Processing images from directory " + sourceDirectory + "...")
 	// Open the source directory
 	dir, err := os.Open(sourceDirectory)
 	if err != nil {
@@ -260,7 +260,7 @@ func main() {
 		}
 
 		// Process the image
-		if err := processImage(count, f, targetDirectory, watermarkImageFile, watermarkIncreasement, watermarkMarginRight, watermarkMarginBottom, watermarkOpacity, targetWaterkaredImageWidth, targetWaterkaredImageHight, targetWaterkaredImageFilename, targetWaterkaredImageFilenameSuffix); err != nil {
+		if err := processImage(count, f, targetDirectory, watermarkImageFile, watermarkIncreasement, watermarkMarginRight, watermarkMarginBottom, watermarkOpacity, targetWatermarkedImageWidth, targetWatermarkedImageHight, targetWatermarkedImageFilename, targetWatermarkedImageFilenameSuffix); err != nil {
 			log.Printf("Failed to processImage of file %+v Error: %v", sourceDirectory+file.Name(), err)
 			continue
 		}
