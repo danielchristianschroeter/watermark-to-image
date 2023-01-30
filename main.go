@@ -50,7 +50,7 @@ func init() {
 	flag.IntVar(&watermarkMarginBottom, "watermarkMarginBottom", 20, "Margin to the bottom edge for the watermark")
 	flag.IntVar(&targetWaterkaredImageWidth, "targetWaterkaredImageWidth", 0, "Resize target watermarked image width, if targetWaterkaredImageHight is empty aspect ratio will be presvered")
 	flag.IntVar(&targetWaterkaredImageHight, "targetWaterkaredImageHight", 0, "Resize target watermarked image hight, if targetWaterkaredImageWidth is empty aspect ratio will be presvered")
-	flag.StringVar(&targetWaterkaredImageFilename, "targetWaterkaredImageFilename", "", "Rename all target files to the spercified filename, if set targetWaterkaredImageExtension is required")
+	flag.StringVar(&targetWaterkaredImageFilename, "targetWaterkaredImageFilename", "", "Rename all target files to the specified filename, if set targetWaterkaredImageExtension is required")
 	flag.StringVar(&targetWaterkaredImageFilenameSuffix, "targetWaterkaredImageFilenameSuffix", "3DIGITSCOUNT", "Dynamic Suffix for the filename definied in targetWaterkaredImageFilename added to every target file. Allowed values are 3DIGITSCOUNT (3 digits enumeration count) or RAND (random 6 digits number)")
 }
 
