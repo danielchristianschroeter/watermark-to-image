@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/gabriel-vasile/mimetype v1.4.1
-	golang.org/x/image v0.2.0
+	golang.org/x/image v0.5.0
 )
 
 require (
