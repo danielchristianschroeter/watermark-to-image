@@ -74,6 +74,7 @@ The application supports various command-line parameters for customization. Here
 ## Download Executables
 
 You can download prebuilt executables for various operating systems from the [Releases](https://github.com/danielchristianschroeter/watermark-to-image/releases) page.
+_Note for macOS users: Due to the application not being officially signed, it may need to be manually approved under your system's security settings._
 
 ## License
 
