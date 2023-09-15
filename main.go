@@ -33,28 +33,109 @@ var (
 	watermarkOpacity                     float64
 	watermarkMarginRight                 int
 	watermarkMarginBottom                int
+	targetWatermarkedImageMaxDimension   int
 	targetWatermarkedImageWidth          int
-	targetWatermarkedImageHight          int
+	targetWatermarkedImageHeight         int
 	targetWatermarkedImageFilename       string
 	targetWatermarkedImageFilenameSuffix string
 )
 
 func init() {
 	// Initialize command line flags
-	flag.StringVar(&sourceDirectory, "sourceDirectory", "", "Source directory of original images")
-	flag.StringVar(&targetDirectory, "targetDirectory", "", "Target directory for watermarked images")
-	flag.StringVar(&watermarkImageFile, "watermarkImageFile", "", "Path and name of the watermark png image file")
-	flag.Float64Var(&watermarkIncreasement, "watermarkIncreasement", 100, "Scale factor of the watermark image file")
-	flag.Float64Var(&watermarkOpacity, "watermarkOpacity", 0.5, "Opacity/Transparency of the watermark image file")
-	flag.IntVar(&watermarkMarginRight, "watermarkMarginRight", 20, "Margin to the right edge for the watermark")
-	flag.IntVar(&watermarkMarginBottom, "watermarkMarginBottom", 20, "Margin to the bottom edge for the watermark")
-	flag.IntVar(&targetWatermarkedImageWidth, "targetWatermarkedImageWidth", 0, "Resize target watermarked image width, if targetWatermarkedImageHight is empty aspect ratio will be preserved")
-	flag.IntVar(&targetWatermarkedImageHight, "targetWatermarkedImageHight", 0, "Resize target watermarked image hight, if targetWatermarkedImageWidth is empty aspect ratio will be preserved")
-	flag.StringVar(&targetWatermarkedImageFilename, "targetWatermarkedImageFilename", "", "Rename all target files to the specified filename, if set targetWatermarkedImageExtension is required")
-	flag.StringVar(&targetWatermarkedImageFilenameSuffix, "targetWatermarkedImageFilenameSuffix", "3DIGITSCOUNT", "Dynamic Suffix for the filename defined in targetWatermarkedImageFilename added to every target file. Allowed values are 3DIGITSCOUNT (3 digits enumeration count) or RAND (random 6 digits number)")
+	flag.StringVar(&sourceDirectory, "sourceDirectory", "", "Set the source directory for original images (required).")
+	flag.StringVar(&targetDirectory, "targetDirectory", "", "Set the target directory for watermarked images (required).")
+	flag.StringVar(&watermarkImageFile, "watermarkImageFile", "", "Specify the path and name of the watermark PNG image file (required).")
+	flag.Float64Var(&watermarkIncreasement, "watermarkIncreasement", 100.0, "Set the scale factor for the watermark image (in percentage).")
+	flag.Float64Var(&watermarkOpacity, "watermarkOpacity", 0.5, "Set the opacity/transparency of the watermark image (0.0 to 1.0).")
+	flag.IntVar(&watermarkMarginRight, "watermarkMarginRight", 20, "Set the margin from the right edge for the watermark (in pixels).")
+	flag.IntVar(&watermarkMarginBottom, "watermarkMarginBottom", 20, "Set the margin from the bottom edge for the watermark (in pixels).")
+	flag.IntVar(&targetWatermarkedImageMaxDimension, "targetWatermarkedImageMaxDimension", 0, "Specify the maximum dimension size for the target watermarked image. Use 0 to maintain the aspect ratio. Default is 0.")
+	flag.IntVar(&targetWatermarkedImageWidth, "targetWatermarkedImageWidth", 0, "Resize the target watermarked image to the specified width (in pixels). Aspect ratio will be preserved if 'targetWatermarkedImageHeight' is empty.")
+	flag.IntVar(&targetWatermarkedImageHeight, "targetWatermarkedImageHeight", 0, "Resize the target watermarked image to the specified height (in pixels). Aspect ratio will be preserved if 'targetWatermarkedImageWidth' is empty.")
+	flag.StringVar(&targetWatermarkedImageFilename, "targetWatermarkedImageFilename", "", "Rename all target files to the specified filename. Requires 'targetWatermarkedImageExtension' to be set.")
+	flag.StringVar(&targetWatermarkedImageFilenameSuffix, "targetWatermarkedImageFilenameSuffix", "3DIGITSCOUNT", "Set the dynamic suffix for the filename defined in 'targetWatermarkedImageFilename'. Allowed values are '3DIGITSCOUNT' (3-digit enumeration count) or 'RAND' (random 6-digit number). Default is '3DIGITSCOUNT'.")
 }
 
-func processImage(count int, file *os.File, targetDirectory string, watermarkImageFile string, watermarkIncreasement float64, watermarkMarginRight int, watermarkMarginBottom int, watermarkOpacity float64, targetWatermarkedImageWidth int, targetWatermarkedImageHight int, targetWatermarkedImageFilename string, targetWatermarkedImageFilenameSuffix string) error {
+func main() {
+	log.SetFlags(0)
+	flag.Usage = func() {
+		log.Println("watermark-to-image. Version: " + version)
+		flag.PrintDefaults()
+	}
+	flag.Parse()
+
+	if len(sourceDirectory) == 0 || len(targetDirectory) == 0 || len(watermarkImageFile) == 0 {
+		log.Fatal("Usage: -sourceDirectory <sourceDirectory> -targetDirectory <targetDirectory> -watermarkImageFile <watermarkImageFile>")
+	}
+
+	if (targetWatermarkedImageMaxDimension != 0) && (targetWatermarkedImageWidth != 0 || targetWatermarkedImageHeight != 0) {
+		log.Fatal("Error: Only one of targetWatermarkedImageMaxDimension or targetWatermarkedImageWidth/targetWatermarkedImageHeight should be set.")
+	}
+
+	// Add slash to source directory, if not exists
+	if !strings.HasSuffix(sourceDirectory, "/") {
+		sourceDirectory += "/"
+	}
+
+	// Add slash to target directory, if not exists
+	if !strings.HasSuffix(targetDirectory, "/") {
+		targetDirectory += "/"
+	}
+
+	log.Println("Processing images from directory " + sourceDirectory + "...")
+	// Open the source directory
+	dir, err := os.Open(sourceDirectory)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer dir.Close()
+
+	// Get a list of all the files in the source directory
+	files, err := dir.Readdir(-1)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Set a count
+	count := 1
+
+	// Loop through the images in the source directory
+	for _, file := range files {
+
+		// Skip files that start with a dot (e.g. .DS_Store file)
+		if strings.HasPrefix(file.Name(), ".") {
+			continue
+		}
+
+		// Open the image
+		f, err := os.Open(sourceDirectory + file.Name())
+		if err != nil {
+			log.Printf("Failed to os.Open of file %+v Error: %v", sourceDirectory+file.Name(), err)
+			continue
+		}
+		defer f.Close()
+
+		// Skip image/heic
+		mimeType, err := mimetype.DetectFile(sourceDirectory + file.Name())
+		if err != nil {
+			log.Printf("Failed to mimetype.DetectFile of file %+v Error: %v", sourceDirectory+file.Name(), err)
+		}
+		switch mimeType.String() {
+		case "image/heic":
+			log.Printf("Skipping %v Reason: heic images are not supported yet", sourceDirectory+file.Name())
+			continue
+		}
+
+		// Process the image
+		if err := processImage(count, f, targetDirectory, watermarkImageFile, watermarkIncreasement, watermarkMarginRight, watermarkMarginBottom, watermarkOpacity, targetWatermarkedImageMaxDimension, targetWatermarkedImageWidth, targetWatermarkedImageHeight, targetWatermarkedImageFilename, targetWatermarkedImageFilenameSuffix); err != nil {
+			log.Printf("Failed to processImage of file %+v Error: %v", sourceDirectory+file.Name(), err)
+			continue
+		}
+		count++
+	}
+}
+
+func processImage(count int, file *os.File, targetDirectory string, watermarkImageFile string, watermarkIncreasement float64, watermarkMarginRight int, watermarkMarginBottom int, watermarkOpacity float64, targetWatermarkedImageMaxDimension int, targetWatermarkedImageWidth int, targetWatermarkedImageHeight int, targetWatermarkedImageFilename string, targetWatermarkedImageFilenameSuffix string) error {
 	var orientationInt uint16
 	// Load the watermark png image file using image.Decode
 	watermarkFile, err := os.Open(watermarkImageFile)
@@ -156,9 +237,11 @@ func processImage(count int, file *os.File, targetDirectory string, watermarkIma
 	// Overlay the watermark onto the photo image with a specified opacity/transparency
 	dst := imaging.Overlay(img, resizedWatermark, image.Pt(dstX, dstY), watermarkOpacity)
 
-	// Resize the image
-	if targetWatermarkedImageWidth != 0 || targetWatermarkedImageHight != 0 {
-		dst = imaging.Resize(img, targetWatermarkedImageWidth, targetWatermarkedImageHight, imaging.Lanczos)
+	// Resize the watermarked image if specified
+	if targetWatermarkedImageMaxDimension > 0 {
+		dst = resizeImageProportionally(dst, targetWatermarkedImageMaxDimension)
+	} else if targetWatermarkedImageWidth > 0 || targetWatermarkedImageHeight > 0 {
+		dst = resizeImage(dst, targetWatermarkedImageWidth, targetWatermarkedImageHeight)
 	}
 
 	if targetWatermarkedImageFilename != "" && targetWatermarkedImageFilenameSuffix != "" {
@@ -193,77 +276,31 @@ func processImage(count int, file *os.File, targetDirectory string, watermarkIma
 	return nil
 }
 
-func main() {
-	log.SetFlags(0)
-	flag.Usage = func() {
-		log.Println("watermark-to-image. Version: " + version)
-		flag.PrintDefaults()
-	}
-	flag.Parse()
+// Resize an image proportionally to the specified maximum dimension.
+func resizeImageProportionally(img image.Image, maxDimension int) *image.NRGBA {
+	// Determine image dimensions and aspect ratio
+	width := img.Bounds().Dx()
+	height := img.Bounds().Dy()
 
-	if len(sourceDirectory) == 0 || len(targetDirectory) == 0 || len(watermarkImageFile) == 0 {
-		log.Fatal("Usage: -sourceDirectory <sourceDirectory> -targetDirectory <targetDirectory> -watermarkImageFile <watermarkImageFile>")
-	}
-
-	// Add slash to source directory, if not exists
-	if !strings.HasSuffix(sourceDirectory, "/") {
-		sourceDirectory += "/"
-	}
-
-	// Add slash to target directory, if not exists
-	if !strings.HasSuffix(targetDirectory, "/") {
-		targetDirectory += "/"
+	// Calculate the new dimensions while maintaining the aspect ratio
+	var newWidth, newHeight int
+	if height > width {
+		newHeight = maxDimension
+		newWidth = (maxDimension * width) / height
+	} else {
+		newWidth = maxDimension
+		newHeight = (maxDimension * height) / width
 	}
 
-	log.Println("Processing images from directory " + sourceDirectory + "...")
-	// Open the source directory
-	dir, err := os.Open(sourceDirectory)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer dir.Close()
+	// Resize the image
+	resizedImg := imaging.Resize(img, newWidth, newHeight, imaging.Lanczos)
 
-	// Get a list of all the files in the source directory
-	files, err := dir.Readdir(-1)
-	if err != nil {
-		log.Fatal(err)
-	}
+	return resizedImg
+}
 
-	// Set a count
-	count := 1
+// Resize an image to the specified width and height.
+func resizeImage(img image.Image, width, height int) *image.NRGBA {
+	resizedImg := imaging.Resize(img, width, height, imaging.Lanczos)
 
-	// Loop through the images in the source directory
-	for _, file := range files {
-
-		// Skip files that start with a dot (e.g. .DS_Store file)
-		if strings.HasPrefix(file.Name(), ".") {
-			continue
-		}
-
-		// Open the image
-		f, err := os.Open(sourceDirectory + file.Name())
-		if err != nil {
-			log.Printf("Failed to os.Open of file %+v Error: %v", sourceDirectory+file.Name(), err)
-			continue
-		}
-		defer f.Close()
-
-		// Skip image/heic
-		mimeType, err := mimetype.DetectFile(sourceDirectory + file.Name())
-		if err != nil {
-			log.Printf("Failed to mimetype.DetectFile of file %+v Error: %v", sourceDirectory+file.Name(), err)
-		}
-		switch mimeType.String() {
-		case "image/heic":
-			log.Printf("Skipping %v Reason: heic images are not supported yet", sourceDirectory+file.Name())
-			continue
-		}
-
-		// Process the image
-		if err := processImage(count, f, targetDirectory, watermarkImageFile, watermarkIncreasement, watermarkMarginRight, watermarkMarginBottom, watermarkOpacity, targetWatermarkedImageWidth, targetWatermarkedImageHight, targetWatermarkedImageFilename, targetWatermarkedImageFilenameSuffix); err != nil {
-			log.Printf("Failed to processImage of file %+v Error: %v", sourceDirectory+file.Name(), err)
-			continue
-		}
-		count++
-	}
+	return resizedImg
 }
