@@ -8,6 +8,7 @@ Watermark-to-Image is a command-line application for inserting watermarks into t
 - [Usage](#usage)
 - [Clone and Build](#clone-and-build)
 - [Command Line Parameters](#command-line-parameters)
+- [Download Executables](#download-executables)
 - [License](#license)
 
 # Examples
@@ -69,6 +70,10 @@ The application supports various command-line parameters for customization. Here
   -watermarkOpacity float
         Set the opacity/transparency of the watermark image (0.0 to 1.0). (default 0.5)
 ```
+
+## Download Executables
+
+You can download prebuilt executables for various operating systems from the [Releases](https://github.com/danielchristianschroeter/watermark-to-image/releases) page.
 
 ## License
 
