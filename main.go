@@ -214,10 +214,6 @@ func processImage(count int, file *os.File, targetDirectory string, watermarkIma
 		// no adjustment needed
 	}
 
-	// Get the width and the height of our image
-	photoWidth := img.Bounds().Dx()
-	photoHeight := img.Bounds().Dy()
-
 	// 	Get the width and the height of our watermark
 	watermarkWidth := watermark.Bounds().Dx()
 	watermarkHeight := watermark.Bounds().Dy()
@@ -228,21 +224,21 @@ func processImage(count int, file *os.File, targetDirectory string, watermarkIma
 	resizedWatermark := image.NewRGBA(image.Rect(0, 0, resizedWidth, resizedHeight))
 	draw.NearestNeighbor.Scale(resizedWatermark, resizedWatermark.Bounds(), watermark, watermark.Bounds(), draw.Over, nil)
 
+	// Resize the watermarked image if specified
+	if targetWatermarkedImageMaxDimension > 0 {
+		img = resizeImageProportionally(img, targetWatermarkedImageMaxDimension)
+	} else if targetWatermarkedImageWidth > 0 || targetWatermarkedImageHeight > 0 {
+		img = resizeImage(img, targetWatermarkedImageWidth, targetWatermarkedImageHeight)
+	}
+
 	// Figure out the dstX value
-	dstX := photoWidth - resizedWidth - watermarkMarginRight
+	dstX := img.Bounds().Dx() - resizedWidth - watermarkMarginRight
 
 	// Figure out the dstY value
-	dstY := photoHeight - resizedHeight - watermarkMarginBottom
+	dstY := img.Bounds().Dy() - resizedHeight - watermarkMarginBottom
 
 	// Overlay the watermark onto the photo image with a specified opacity/transparency
 	dst := imaging.Overlay(img, resizedWatermark, image.Pt(dstX, dstY), watermarkOpacity)
-
-	// Resize the watermarked image if specified
-	if targetWatermarkedImageMaxDimension > 0 {
-		dst = resizeImageProportionally(dst, targetWatermarkedImageMaxDimension)
-	} else if targetWatermarkedImageWidth > 0 || targetWatermarkedImageHeight > 0 {
-		dst = resizeImage(dst, targetWatermarkedImageWidth, targetWatermarkedImageHeight)
-	}
 
 	if targetWatermarkedImageFilename != "" && targetWatermarkedImageFilenameSuffix != "" {
 		// Save the new image with a custom filename and a dynamic suffix
