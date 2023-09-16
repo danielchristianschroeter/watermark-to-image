@@ -11,6 +11,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -52,7 +53,7 @@ func init() {
 	flag.IntVar(&targetWatermarkedImageMaxDimension, "targetWatermarkedImageMaxDimension", 0, "Specify the maximum dimension size for the target watermarked image. Use 0 to maintain the aspect ratio. Default is 0.")
 	flag.IntVar(&targetWatermarkedImageWidth, "targetWatermarkedImageWidth", 0, "Resize the target watermarked image to the specified width (in pixels). Aspect ratio will be preserved if 'targetWatermarkedImageHeight' is empty.")
 	flag.IntVar(&targetWatermarkedImageHeight, "targetWatermarkedImageHeight", 0, "Resize the target watermarked image to the specified height (in pixels). Aspect ratio will be preserved if 'targetWatermarkedImageWidth' is empty.")
-	flag.StringVar(&targetWatermarkedImageFilename, "targetWatermarkedImageFilename", "", "Rename all target files to the specified filename. Requires 'targetWatermarkedImageExtension' to be set.")
+	flag.StringVar(&targetWatermarkedImageFilename, "targetWatermarkedImageFilename", "", "Rename all target files to the specified filename.")
 	flag.StringVar(&targetWatermarkedImageFilenameSuffix, "targetWatermarkedImageFilenameSuffix", "3DIGITSCOUNT", "Set the dynamic suffix for the filename defined in 'targetWatermarkedImageFilename'. Allowed values are '3DIGITSCOUNT' (3-digit enumeration count) or 'RAND' (random 6-digit number). Default is '3DIGITSCOUNT'.")
 }
 
@@ -95,6 +96,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Sort the files by name
+	sort.Slice(files, func(i, j int) bool {
+		return files[i].Name() < files[j].Name()
+	})
 
 	// Set a count
 	count := 1

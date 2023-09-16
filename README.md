@@ -1,6 +1,6 @@
 # watermark-to-image
 
-Watermark-to-Image is a command-line application for inserting watermarks into the lower right corner of images located in a specified folder. It supports various customization options.
+Watermark-to-Image is a command-line application for inserting watermarks into images located in a specified folder. It supports various customization options.
 
 ## Table of Contents
 
@@ -41,7 +41,7 @@ $ go build .
 
 ## Command Line Parameters
 
-The application supports various command-line parameters for customization. Here is a list of available parameters:
+The application supports various command-line parameters for customization. Here is a list of all available parameters:
 
 ```shell
 ./watermark-to-image --help
@@ -50,7 +50,7 @@ The application supports various command-line parameters for customization. Here
   -targetDirectory string
         Set the target directory for watermarked images (required).
   -targetWatermarkedImageFilename string
-        Rename all target files to the specified filename. Requires 'targetWatermarkedImageExtension' to be set.
+        Rename all target files to the specified filename.
   -targetWatermarkedImageFilenameSuffix string
         Set the dynamic suffix for the filename defined in 'targetWatermarkedImageFilename'. Allowed values are '3DIGITSCOUNT' (3-digit enumeration count) or 'RAND' (random 6-digit number). Default is '3DIGITSCOUNT'. (default "3DIGITSCOUNT")
   -targetWatermarkedImageHeight int
@@ -74,6 +74,7 @@ The application supports various command-line parameters for customization. Here
 ## Download Executables
 
 You can download prebuilt executables for various operating systems from the [Releases](https://github.com/danielchristianschroeter/watermark-to-image/releases) page.
+
 _Note for macOS users: Due to the application not being officially signed, it may need to be manually approved under your system's security settings._
 
 ## License
