@@ -19,7 +19,6 @@ import (
 	exif "github.com/dsoprea/go-exif/v3"
 	exifcommon "github.com/dsoprea/go-exif/v3/common"
 	"github.com/gabriel-vasile/mimetype"
-	"golang.org/x/image/draw"
 )
 
 // Used for build version information
@@ -30,7 +29,7 @@ var (
 	sourceDirectory                      string
 	targetDirectory                      string
 	watermarkImageFile                   string
-	watermarkIncreasement                float64
+	watermarkScaleFactor                 float64
 	watermarkOpacity                     float64
 	watermarkMarginRight                 int
 	watermarkMarginBottom                int
@@ -46,7 +45,7 @@ func init() {
 	flag.StringVar(&sourceDirectory, "sourceDirectory", "", "Set the source directory for original images (required).")
 	flag.StringVar(&targetDirectory, "targetDirectory", "", "Set the target directory for watermarked images (required).")
 	flag.StringVar(&watermarkImageFile, "watermarkImageFile", "", "Specify the path and name of the watermark PNG image file (required).")
-	flag.Float64Var(&watermarkIncreasement, "watermarkIncreasement", 100.0, "Set the scale factor for the watermark image (in percentage).")
+	flag.Float64Var(&watermarkScaleFactor, "watermarkScaleFactor", 100.0, "Set the scale factor for the watermark image (in percentage).")
 	flag.Float64Var(&watermarkOpacity, "watermarkOpacity", 0.5, "Set the opacity/transparency of the watermark image (0.0 to 1.0).")
 	flag.IntVar(&watermarkMarginRight, "watermarkMarginRight", 20, "Set the margin from the right edge for the watermark (in pixels).")
 	flag.IntVar(&watermarkMarginBottom, "watermarkMarginBottom", 20, "Set the margin from the bottom edge for the watermark (in pixels).")
@@ -133,7 +132,7 @@ func main() {
 		}
 
 		// Process the image
-		if err := processImage(count, f, targetDirectory, watermarkImageFile, watermarkIncreasement, watermarkMarginRight, watermarkMarginBottom, watermarkOpacity, targetWatermarkedImageMaxDimension, targetWatermarkedImageWidth, targetWatermarkedImageHeight, targetWatermarkedImageFilename, targetWatermarkedImageFilenameSuffix); err != nil {
+		if err := processImage(count, f, targetDirectory, watermarkImageFile, watermarkScaleFactor, watermarkMarginRight, watermarkMarginBottom, watermarkOpacity, targetWatermarkedImageMaxDimension, targetWatermarkedImageWidth, targetWatermarkedImageHeight, targetWatermarkedImageFilename, targetWatermarkedImageFilenameSuffix); err != nil {
 			log.Printf("Failed to processImage of file %+v Error: %v", sourceDirectory+file.Name(), err)
 			continue
 		}
@@ -141,7 +140,7 @@ func main() {
 	}
 }
 
-func processImage(count int, file *os.File, targetDirectory string, watermarkImageFile string, watermarkIncreasement float64, watermarkMarginRight int, watermarkMarginBottom int, watermarkOpacity float64, targetWatermarkedImageMaxDimension int, targetWatermarkedImageWidth int, targetWatermarkedImageHeight int, targetWatermarkedImageFilename string, targetWatermarkedImageFilenameSuffix string) error {
+func processImage(count int, file *os.File, targetDirectory string, watermarkImageFile string, watermarkScaleFactor float64, watermarkMarginRight int, watermarkMarginBottom int, watermarkOpacity float64, targetWatermarkedImageMaxDimension int, targetWatermarkedImageWidth int, targetWatermarkedImageHeight int, targetWatermarkedImageFilename string, targetWatermarkedImageFilenameSuffix string) error {
 	var orientationInt uint16
 	// Load the watermark png image file using image.Decode
 	watermarkFile, err := os.Open(watermarkImageFile)
@@ -172,14 +171,16 @@ func processImage(count int, file *os.File, targetDirectory string, watermarkIma
 		}
 		results, err := index.RootIfd.FindTagWithName("Orientation")
 		if err != nil {
-			log.Fatalf("Failed to index.RootIfd.FindTagWithName in file %+v Error: %+v", file.Name(), err)
+			log.Printf("Notice: Orientation tag not found in file %+v", file.Name())
+			// Handle this case as needed, or continue with your code
+		} else {
+			orientation, err := results[0].Value()
+			if err != nil {
+				log.Fatalf("Failed to extract value of results from exif data in file %+v Error: %+v", file.Name(), err)
+			}
+			orientationSlice := orientation.([]uint16)
+			orientationInt = orientationSlice[0]
 		}
-		orientation, err := results[0].Value()
-		if err != nil {
-			log.Fatalf("Failed to extract value of results from exif data in file %+v Error: %+v", file.Name(), err)
-		}
-		orientationSlice := orientation.([]uint16)
-		orientationInt = orientationSlice[0]
 	} else {
 		log.Printf("Notice: No exif data found for file %+v", file.Name())
 	}
@@ -225,10 +226,11 @@ func processImage(count int, file *os.File, targetDirectory string, watermarkIma
 	watermarkHeight := watermark.Bounds().Dy()
 
 	// Increase the dimensions of the watermark by a given percentage
-	resizedWidth := int(float64(watermarkWidth) * (float64(watermarkIncreasement) / 100.0))
-	resizedHeight := int(float64(watermarkHeight) * (float64(watermarkIncreasement) / 100.0))
-	resizedWatermark := image.NewRGBA(image.Rect(0, 0, resizedWidth, resizedHeight))
-	draw.NearestNeighbor.Scale(resizedWatermark, resizedWatermark.Bounds(), watermark, watermark.Bounds(), draw.Over, nil)
+	resizedWidth := int(float64(watermarkWidth) * (float64(watermarkScaleFactor) / 100.0))
+	resizedHeight := int(float64(watermarkHeight) * (float64(watermarkScaleFactor) / 100.0))
+
+	// Resize the watermark using Lanczos interpolation
+	resizedWatermark := imaging.Resize(watermark, resizedWidth, resizedHeight, imaging.Lanczos)
 
 	// Resize the watermarked image if specified
 	if targetWatermarkedImageMaxDimension > 0 {

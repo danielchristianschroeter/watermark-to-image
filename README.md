@@ -61,7 +61,7 @@ The application supports various command-line parameters for customization. Here
         Resize the target watermarked image to the specified width (in pixels). Aspect ratio will be preserved if 'targetWatermarkedImageHeight' is empty.
   -watermarkImageFile string
         Specify the path and name of the watermark PNG image file (required).
-  -watermarkIncreasement float
+  -watermarkScaleFactor float
         Set the scale factor for the watermark image (in percentage). (default 100)
   -watermarkMarginBottom int
         Set the margin from the bottom edge for the watermark (in pixels). (default 20)
