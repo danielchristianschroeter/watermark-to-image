@@ -18,5 +18,5 @@ require (
 
 require (
 	github.com/dsoprea/go-exif/v3 v3.0.1
-	golang.org/x/net v0.17.0 // indirect
+	golang.org/x/net v0.23.0 // indirect
 )
