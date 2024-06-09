@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/disintegration/imaging v1.6.2
-	github.com/gabriel-vasile/mimetype v1.4.2
+	github.com/gabriel-vasile/mimetype v1.4.4
 )
 
 require (
@@ -18,5 +18,5 @@ require (
 
 require (
 	github.com/dsoprea/go-exif/v3 v3.0.1
-	golang.org/x/net v0.23.0 // indirect
+	golang.org/x/net v0.25.0 // indirect
 )
